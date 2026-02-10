@@ -40,6 +40,11 @@ async def override_get_db():
 
 
 app.dependency_overrides[get_db] = override_get_db
+app.state._testing = True
+
+# Also override the session factory used by checker/scheduler background tasks
+import app.database as _db_module
+_db_module.get_session_factory = lambda: test_session_factory
 
 
 @pytest_asyncio.fixture

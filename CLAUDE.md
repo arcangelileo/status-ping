@@ -33,12 +33,12 @@ Phase: DEVELOPMENT
 - [x] Design database schema and set up SQLAlchemy models + Alembic migrations (User, Monitor, CheckResult, Incident, StatusPage)
 - [x] Implement user registration and JWT authentication (signup, login, logout)
 - [x] Build monitor CRUD API (create, read, update, delete monitors with validation)
-- [ ] Implement uptime check engine (async HTTP checks via httpx, APScheduler job per monitor)
-- [ ] Build check result storage and retention (store results, prune old data based on plan)
-- [ ] Implement incident detection and alert system (consecutive failure detection, email alerts on state change)
+- [x] Implement uptime check engine (async HTTP checks via httpx, APScheduler job per monitor)
+- [x] Build check result storage and retention (store results, prune old data based on plan)
+- [x] Implement incident detection and alert system (consecutive failure detection, email alerts on state change)
 - [x] Create dashboard UI (monitor list with status indicators, response time charts, uptime percentages)
-- [ ] Build public status page (per-account page showing all public monitors, uptime bars, current status)
-- [ ] Add monitor detail view (response time history chart, recent check log, incident history)
+- [x] Build public status page (per-account page showing all public monitors, uptime bars, current status)
+- [x] Add monitor detail view (response time history chart, recent check log, incident history)
 - [x] Implement billing/subscription tier logic (enforce monitor limits, check intervals, feature gates)
 - [ ] Write Dockerfile and docker-compose.yml
 - [ ] Write README with setup and deployment instructions
@@ -74,6 +74,22 @@ Phase: DEVELOPMENT
 - Auth guards: dashboard redirects to login for unauthenticated users, API returns 401
 - Wrote and passed 33 tests covering auth (13 tests) + monitors (16 tests) + pages (4 tests)
 
+### Session 4 — CHECK ENGINE, STATUS PAGE & MONITOR DETAIL
+- Built async uptime check engine (`checker.py`) with httpx: performs HTTP checks, stores CheckResult, updates Monitor status
+- Created APScheduler integration (`scheduler.py`): per-monitor scheduled jobs, loads on startup, manages add/remove
+- Implemented incident detection: 3 consecutive failures → creates incident (up→down), auto-resolves on recovery (down→up)
+- Built email alert system with HTML templates for down/recovery notifications (SMTP when configured)
+- Added retention pruning: hourly job deletes old check results based on plan tier (24h/90d/1yr)
+- Created professional public status page (`/s/{slug}`) with 90-day uptime bars, per-monitor status, recent incidents
+- Added JSON API for status data (`/s/{slug}/api`) for programmatic access
+- Built monitor detail view with canvas-based response time chart, check history log, incident history
+- Added check results API (`GET /api/monitors/{id}/results`) and uptime stats API (`GET /api/monitors/{id}/uptime`)
+- Integrated scheduler with monitor CRUD: creating/updating/deleting monitors auto-manages scheduled jobs
+- Dashboard monitor names now link to detail view
+- Fixed timezone handling for SQLite naive datetimes in incident resolution
+- Added `get_session_factory()` indirection for testable background tasks
+- Wrote and passed 54 tests: auth (13) + checker (7) + health (4) + monitors (16) + status page (14)
+
 ## Known Issues
 (none yet)
 
@@ -105,23 +121,29 @@ status-ping/
 │       ├── auth.py                    # JWT auth utilities (hash, token, deps)
 │       ├── schemas.py                 # Pydantic request/response schemas
 │       ├── plans.py                   # Plan tier limits and features
+│       ├── checker.py                # Uptime check engine (HTTP checks, incidents, alerts)
+│       ├── scheduler.py              # APScheduler integration (per-monitor jobs)
 │       ├── routers/
 │       │   ├── __init__.py
 │       │   ├── auth.py                # Auth routes (signup, login, logout, me)
-│       │   ├── monitors.py           # Monitor CRUD API routes
-│       │   ├── pages.py              # Page routes (landing, login, signup, dashboard)
-│       │   └── status.py             # Public status page routes (stub)
+│       │   ├── monitors.py           # Monitor CRUD + results/uptime API routes
+│       │   ├── pages.py              # Page routes (landing, login, signup, dashboard, detail)
+│       │   └── status.py             # Public status page routes (HTML + JSON API)
 │       ├── static/                    # Static assets
 │       └── templates/
 │           ├── base.html              # Base template with nav & footer
 │           ├── landing.html           # Landing page with features & pricing
 │           ├── login.html             # Login form
 │           ├── signup.html            # Signup form
-│           └── dashboard.html         # Dashboard with monitor list & management
+│           ├── dashboard.html         # Dashboard with monitor list & management
+│           ├── monitor_detail.html    # Monitor detail with charts & history
+│           └── status_page.html       # Public status page with uptime bars
 └── tests/
     ├── __init__.py
     ├── conftest.py                    # Test configuration with test DB & fixtures
-    ├── test_health.py                 # Health check & page tests
+    ├── test_health.py                 # Health check & page tests (4 tests)
     ├── test_auth.py                   # Auth API tests (13 tests)
-    └── test_monitors.py              # Monitor CRUD API tests (16 tests)
+    ├── test_monitors.py              # Monitor CRUD API tests (16 tests)
+    ├── test_checker.py               # Check engine & incident tests (7 tests)
+    └── test_status_page.py           # Status page & detail tests (14 tests)
 ```

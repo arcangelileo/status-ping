@@ -279,7 +279,7 @@ function monitorCard(m) {
                 </div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                        <h3 class="text-sm font-semibold text-gray-900 truncate">${escapeHtml(m.name)}</h3>
+                        <a href="/monitors/${m.id}" class="text-sm font-semibold text-gray-900 truncate hover:text-brand-600 transition">${escapeHtml(m.name)}</a>
                         <span class="inline-flex items-center gap-1 text-xs font-medium ${s.text} ${s.bg} px-2 py-0.5 rounded-full">
                             <span class="w-1.5 h-1.5 rounded-full ${s.dot}"></span>
                             ${s.label}

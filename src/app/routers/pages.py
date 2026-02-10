@@ -37,3 +37,15 @@ async def signup_page(request: Request):
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse(request, "dashboard.html", {"user": user})
+
+
+@router.get("/monitors/{monitor_id}", response_class=HTMLResponse)
+async def monitor_detail_page(
+    monitor_id: str,
+    request: Request,
+    user: User = Depends(get_current_user),
+):
+    return templates.TemplateResponse(request, "monitor_detail.html", {
+        "user": user,
+        "monitor_id": monitor_id,
+    })

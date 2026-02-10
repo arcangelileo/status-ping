@@ -17,6 +17,11 @@ class Base(DeclarativeBase):
     pass
 
 
+def get_session_factory():
+    """Returns the current session factory. Used by background tasks (checker)."""
+    return async_session
+
+
 async def get_db() -> AsyncSession:
     async with async_session() as session:
         try:

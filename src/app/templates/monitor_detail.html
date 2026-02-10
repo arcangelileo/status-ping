@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Monitor Detail{% endblock %}
+
+{% block nav_right %}
+<div class="flex items-center gap-4">
+    <a href="/dashboard" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Dashboard</a>
+    <div class="relative">
+        <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+            <div class="w-8 h-8 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center font-semibold text-xs">
+                {{ user.name[0] | upper }}
+            </div>
+            <span class="hidden sm:inline">{{ user.name }}</span>
+        </button>
+        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50">
+            <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900 truncate">{{ user.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+            </div>
+            <button onclick="logoutUser()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Loading state -->
+    <div id="loadingState" class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <svg class="animate-spin h-8 w-8 mx-auto text-brand-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <p class="text-sm text-gray-500">Loading monitor details...</p>
+    </div>
+
+    <!-- Content (hidden until loaded) -->
+    <div id="monitorContent" class="hidden">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+                <a href="/dashboard" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    Back to Dashboard
+                </a>
+                <div class="flex items-center gap-3">
+                    <h1 id="monitorName" class="text-2xl font-bold text-gray-900"></h1>
+                    <span id="statusBadge" class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full"></span>
+                </div>
+                <p id="monitorUrl" class="mt-1 text-sm text-gray-500"></p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Uptime 24h</p>
+                <p id="uptime24h" class="text-2xl font-bold text-gray-900 mt-1">-</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Uptime 7d</p>
+                <p id="uptime7d" class="text-2xl font-bold text-gray-900 mt-1">-</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Uptime 30d</p>
+                <p id="uptime30d" class="text-2xl font-bold text-gray-900 mt-1">-</p>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Avg Response</p>
+                <p id="avgResponse" class="text-2xl font-bold text-gray-900 mt-1">-</p>
+            </div>
+        </div>
+
+        <!-- Response Time Chart -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+            <h2 class="text-sm font-semibold text-gray-900 mb-4">Response Time (last 24 hours)</h2>
+            <div class="relative" style="height: 200px;">
+                <canvas id="responseChart" width="100%" height="200"></canvas>
+                <div id="chartEmpty" class="hidden absolute inset-0 flex items-center justify-center">
+                    <p class="text-sm text-gray-400">No check data available yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Checks -->
+        <div class="bg-white rounded-xl border border-gray-200 mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-900">Recent Checks</h2>
+            </div>
+            <div id="checksList" class="divide-y divide-gray-100">
+                <div class="p-6 text-center text-sm text-gray-400">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Incidents -->
+        <div class="bg-white rounded-xl border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-900">Incident History</h2>
+            </div>
+            <div id="incidentsList" class="divide-y divide-gray-100">
+                <div class="p-6 text-center text-sm text-gray-400">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monitorId = "{{ monitor_id }}";
+
+document.addEventListener('DOMContentLoaded', loadAll);
+
+async function loadAll() {
+    try {
+        const [monitorRes, uptimeRes, resultsRes] = await Promise.all([
+            fetch(`/api/monitors/${monitorId}`),
+            fetch(`/api/monitors/${monitorId}/uptime`),
+            fetch(`/api/monitors/${monitorId}/results?hours=24&limit=100`),
+        ]);
+
+        if (monitorRes.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+        if (monitorRes.status === 404) {
+            document.getElementById('loadingState').innerHTML = `
+                <p class="text-red-500 font-medium">Monitor not found</p>
+                <a href="/dashboard" class="text-sm text-brand-600 hover:underline mt-2 inline-block">Back to Dashboard</a>`;
+            return;
+        }
+
+        const monitor = await monitorRes.json();
+        const uptime = await uptimeRes.json();
+        const results = await resultsRes.json();
+
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('monitorContent').classList.remove('hidden');
+
+        renderMonitorHeader(monitor);
+        renderStats(uptime);
+        renderChart(results);
+        renderChecks(results);
+        renderIncidents(uptime.incidents || []);
+    } catch (err) {
+        document.getElementById('loadingState').innerHTML = `
+            <p class="text-red-500 font-medium">Failed to load monitor</p>
+            <p class="text-sm text-gray-500 mt-1">${err.message}</p>`;
+    }
+}
+
+function renderMonitorHeader(m) {
+    document.getElementById('monitorName').textContent = m.name;
+    document.getElementById('monitorUrl').textContent = `${m.method} ${m.url} — every ${formatInterval(m.check_interval)}`;
+
+    const badge = document.getElementById('statusBadge');
+    if (m.current_status === 'up') {
+        badge.className = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-green-700 bg-green-100';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Online';
+    } else if (m.current_status === 'down') {
+        badge.className = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-red-700 bg-red-100';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Down';
+    } else {
+        badge.className = 'inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-gray-500 bg-gray-100';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> Pending';
+    }
+}
+
+function renderStats(uptime) {
+    const fmt = (v) => v !== undefined && v !== null ? `${v}%` : '-';
+    document.getElementById('uptime24h').textContent = fmt(uptime.uptime?.['24h']);
+    document.getElementById('uptime7d').textContent = fmt(uptime.uptime?.['7d']);
+    document.getElementById('uptime30d').textContent = fmt(uptime.uptime?.['30d']);
+    document.getElementById('avgResponse').textContent = uptime.avg_response_time_ms
+        ? `${uptime.avg_response_time_ms}ms`
+        : '-';
+
+    // Color the uptime values
+    colorUptime('uptime24h', uptime.uptime?.['24h']);
+    colorUptime('uptime7d', uptime.uptime?.['7d']);
+    colorUptime('uptime30d', uptime.uptime?.['30d']);
+}
+
+function colorUptime(elementId, value) {
+    const el = document.getElementById(elementId);
+    if (value >= 99) el.classList.add('text-green-600');
+    else if (value >= 95) el.classList.add('text-yellow-600');
+    else if (value > 0) el.classList.add('text-red-600');
+}
+
+function renderChart(results) {
+    const canvas = document.getElementById('responseChart');
+    if (results.length === 0) {
+        canvas.style.display = 'none';
+        document.getElementById('chartEmpty').classList.remove('hidden');
+        return;
+    }
+
+    // Sort chronologically
+    const sorted = [...results].reverse();
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = 200;
+
+    const padding = { top: 10, right: 10, bottom: 30, left: 50 };
+    const w = canvas.width - padding.left - padding.right;
+    const h = canvas.height - padding.top - padding.bottom;
+
+    // Filter to entries with response times
+    const data = sorted.filter(r => r.response_time_ms != null);
+    if (data.length === 0) {
+        canvas.style.display = 'none';
+        document.getElementById('chartEmpty').classList.remove('hidden');
+        return;
+    }
+
+    const maxTime = Math.max(...data.map(d => d.response_time_ms)) * 1.1 || 1000;
+    const minTime = 0;
+
+    // Clear
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid lines
+    ctx.strokeStyle = '#f3f4f6';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (h / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(canvas.width - padding.right, y);
+        ctx.stroke();
+
+        // Y-axis labels
+        const val = Math.round(maxTime - (maxTime / 4) * i);
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${val}ms`, padding.left - 8, y + 4);
+    }
+
+    // Draw line
+    ctx.beginPath();
+    ctx.strokeStyle = '#1486f5';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+
+    data.forEach((d, i) => {
+        const x = padding.left + (i / Math.max(data.length - 1, 1)) * w;
+        const y = padding.top + h - ((d.response_time_ms - minTime) / (maxTime - minTime)) * h;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Fill area under line
+    const lastX = padding.left + ((data.length - 1) / Math.max(data.length - 1, 1)) * w;
+    ctx.lineTo(lastX, padding.top + h);
+    ctx.lineTo(padding.left, padding.top + h);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(20, 134, 245, 0.08)';
+    ctx.fill();
+
+    // Draw dots for down status
+    sorted.forEach((d, i) => {
+        if (d.status === 'down') {
+            const x = padding.left + (i / Math.max(sorted.length - 1, 1)) * w;
+            const y = d.response_time_ms != null
+                ? padding.top + h - ((d.response_time_ms - minTime) / (maxTime - minTime)) * h
+                : padding.top + h;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+        }
+    });
+
+    // X-axis labels
+    if (data.length > 0) {
+        const times = [data[0], data[Math.floor(data.length / 2)], data[data.length - 1]];
+        const positions = [0, 0.5, 1];
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        times.forEach((d, i) => {
+            const x = padding.left + positions[i] * w;
+            const date = new Date(d.checked_at);
+            ctx.fillText(
+                date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                x, canvas.height - 8
+            );
+        });
+    }
+}
+
+function renderChecks(results) {
+    const container = document.getElementById('checksList');
+    if (results.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-sm text-gray-400">No check results yet</div>';
+        return;
+    }
+
+    container.innerHTML = results.slice(0, 20).map(r => {
+        const time = new Date(r.checked_at);
+        const isUp = r.status === 'up';
+        return `
+        <div class="flex items-center justify-between px-6 py-3">
+            <div class="flex items-center gap-3">
+                <span class="w-2 h-2 rounded-full ${isUp ? 'bg-green-500' : 'bg-red-500'}"></span>
+                <span class="text-sm ${isUp ? 'text-gray-700' : 'text-red-600 font-medium'}">${isUp ? 'OK' : 'Failed'}</span>
+                ${r.status_code ? `<span class="text-xs text-gray-400">HTTP ${r.status_code}</span>` : ''}
+                ${r.error_message ? `<span class="text-xs text-red-400 truncate max-w-xs">${escapeHtml(r.error_message)}</span>` : ''}
+            </div>
+            <div class="flex items-center gap-4 text-xs text-gray-400">
+                ${r.response_time_ms != null ? `<span class="font-medium text-gray-600">${r.response_time_ms}ms</span>` : ''}
+                <span>${time.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderIncidents(incidents) {
+    const container = document.getElementById('incidentsList');
+    if (incidents.length === 0) {
+        container.innerHTML = `
+            <div class="p-6 text-center">
+                <div class="flex items-center justify-center gap-2 text-green-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-sm font-medium">No incidents recorded</p>
+                </div>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = incidents.map(inc => {
+        const started = new Date(inc.started_at);
+        const isOngoing = inc.status === 'ongoing';
+        let duration = '';
+        if (inc.resolved_at) {
+            const resolved = new Date(inc.resolved_at);
+            const secs = Math.floor((resolved - started) / 1000);
+            if (secs < 60) duration = `${secs}s`;
+            else if (secs < 3600) duration = `${Math.floor(secs / 60)}m`;
+            else duration = `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
+        }
+        return `
+        <div class="flex items-center justify-between px-6 py-3">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${isOngoing ? 'text-red-700 bg-red-100' : 'text-green-700 bg-green-100'}">
+                    <span class="w-1.5 h-1.5 rounded-full ${isOngoing ? 'bg-red-500' : 'bg-green-500'}"></span>
+                    ${isOngoing ? 'Ongoing' : 'Resolved'}
+                </span>
+                <span class="text-sm text-gray-700">${escapeHtml(inc.title)}</span>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-gray-400">
+                ${duration ? `<span>Duration: ${duration}</span>` : ''}
+                <span>${started.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Utility functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatInterval(seconds) {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    return `${Math.floor(seconds / 3600)}h`;
+}
+
+function toggleUserMenu() {
+    document.getElementById('userMenu').classList.toggle('hidden');
+}
+
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('userMenu');
+    if (menu && !e.target.closest('#userMenu') && !e.target.closest('[onclick="toggleUserMenu()"]')) {
+        menu.classList.add('hidden');
+    }
+});
+
+async function logoutUser() {
+    await fetch('/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+}
+
+// Auto-refresh every 30 seconds
+setInterval(loadAll, 30000);
+</script>
+{% endblock %}

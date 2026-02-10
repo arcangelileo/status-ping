@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}StatusPing — Uptime Monitoring & Status Pages{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-blue-50"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div class="text-center max-w-4xl mx-auto">
+            <div class="inline-flex items-center gap-2 bg-brand-100 text-brand-700 text-sm font-medium px-4 py-1.5 rounded-full mb-8">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                </span>
+                Monitoring made simple
+            </div>
+            <h1 class="text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                Know when your site<br>
+                <span class="text-brand-600">goes down.</span> Instantly.
+            </h1>
+            <p class="mt-6 text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                Monitor your websites and APIs with checks every minute. Get instant alerts when things break, and keep your customers informed with beautiful public status pages.
+            </p>
+            <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/signup" class="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-lg shadow-brand-600/25 transition-all hover:shadow-xl hover:shadow-brand-600/30 hover:-translate-y-0.5">
+                    Start monitoring for free
+                    <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </a>
+                <a href="#pricing" class="inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl transition-all hover:-translate-y-0.5">
+                    View pricing
+                </a>
+            </div>
+            <p class="mt-4 text-sm text-gray-500">Free plan includes 5 monitors. No credit card required.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900">Everything you need to stay online</h2>
+            <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Simple, powerful monitoring with the features that matter most.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Uptime Monitoring</h3>
+                <p class="text-gray-600 leading-relaxed">HTTP/HTTPS checks every 1-5 minutes. We monitor your endpoints around the clock and alert you the moment something goes wrong.</p>
+            </div>
+            <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Instant Alerts</h3>
+                <p class="text-gray-600 leading-relaxed">Get notified via email the second your site goes down. Smart alert deduplication means no alert fatigue — only real incidents.</p>
+            </div>
+            <div class="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Public Status Pages</h3>
+                <p class="text-gray-600 leading-relaxed">Give your customers a branded status page showing real-time service status, uptime history, and incident updates.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900">Simple, transparent pricing</h2>
+            <p class="mt-4 text-lg text-gray-600">Start free. Upgrade when you need more.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <!-- Free -->
+            <div class="bg-white rounded-2xl p-8 border border-gray-200 flex flex-col">
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Free</h3>
+                    <div class="mt-4 flex items-baseline">
+                        <span class="text-4xl font-bold text-gray-900">$0</span>
+                        <span class="ml-1 text-gray-500">/month</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Perfect for personal projects</p>
+                </div>
+                <ul class="space-y-3 mb-8 flex-1">
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Up to 5 monitors
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        5-minute check interval
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Email alerts
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        24-hour history
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        StatusPing-branded status page
+                    </li>
+                </ul>
+                <a href="/signup" class="block text-center px-6 py-3 text-sm font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl transition">
+                    Get started free
+                </a>
+            </div>
+            <!-- Pro -->
+            <div class="bg-white rounded-2xl p-8 border-2 border-brand-600 flex flex-col relative shadow-xl">
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                    <span class="bg-brand-600 text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</span>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Pro</h3>
+                    <div class="mt-4 flex items-baseline">
+                        <span class="text-4xl font-bold text-gray-900">$14</span>
+                        <span class="ml-1 text-gray-500">/month</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">For growing teams and businesses</p>
+                </div>
+                <ul class="space-y-3 mb-8 flex-1">
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Up to 50 monitors
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        1-minute check interval
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Email + webhook alerts
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        90-day history
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Custom status page branding
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        SSL certificate monitoring
+                    </li>
+                </ul>
+                <a href="/signup" class="block text-center px-6 py-3 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-lg shadow-brand-600/25 transition">
+                    Start free trial
+                </a>
+            </div>
+            <!-- Business -->
+            <div class="bg-white rounded-2xl p-8 border border-gray-200 flex flex-col">
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Business</h3>
+                    <div class="mt-4 flex items-baseline">
+                        <span class="text-4xl font-bold text-gray-900">$39</span>
+                        <span class="ml-1 text-gray-500">/month</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">For teams that need it all</p>
+                </div>
+                <ul class="space-y-3 mb-8 flex-1">
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Unlimited monitors
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        30-second check interval
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        All alert channels
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        1-year history
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Custom domain for status page
+                    </li>
+                    <li class="flex items-center gap-3 text-sm text-gray-600">
+                        <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Team members & API access
+                    </li>
+                </ul>
+                <a href="/signup" class="block text-center px-6 py-3 text-sm font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl transition">
+                    Start free trial
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-24 bg-brand-600">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl lg:text-4xl font-bold text-white">Start monitoring in under a minute</h2>
+        <p class="mt-4 text-lg text-brand-100">Add your first monitor and get peace of mind. No credit card required.</p>
+        <a href="/signup" class="mt-8 inline-flex items-center justify-center px-8 py-3.5 text-base font-semibold text-brand-600 bg-white hover:bg-brand-50 rounded-xl shadow-lg transition-all hover:-translate-y-0.5">
+            Create your free account
+            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+        </a>
+    </div>
+</section>
+{% endblock %}

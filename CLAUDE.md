@@ -1,8 +1,9 @@
 # StatusPing
 
-Phase: SCAFFOLDING
+Phase: DEVELOPMENT
 
 ## Project Spec
+- **Repo**: https://github.com/arcangelileo/status-ping
 - **Idea**: StatusPing is an uptime monitoring and public status page platform for businesses and developers. Users add monitors (HTTP/HTTPS endpoints) that are checked at configurable intervals (1-5 minutes). When a site goes down, StatusPing sends instant alerts via email and webhook. Each account gets a branded public status page (e.g., status.yourcompany.com or statusping.app/s/yourcompany) showing real-time and historical uptime for all monitors. It replaces expensive tools like Pingdom, UptimeRobot Pro, and Statuspage.io with a simpler, more affordable alternative.
 - **Target users**: SaaS companies, agencies, freelance developers, and small businesses who run websites/APIs and need to know immediately when things break. Also teams who need to communicate service status to their customers via a public status page.
 - **Revenue model**: Freemium with tiered subscriptions.
@@ -27,8 +28,8 @@ Phase: SCAFFOLDING
 - **Timezone handling**: all timestamps in UTC. Display converted client-side.
 
 ## Task Backlog
-- [ ] Create project structure (pyproject.toml, src layout, .gitignore, alembic init)
-- [ ] Set up FastAPI app skeleton with health check, CORS, static files, Jinja2 templates
+- [x] Create project structure (pyproject.toml, src layout, .gitignore, alembic init)
+- [x] Set up FastAPI app skeleton with health check, CORS, static files, Jinja2 templates
 - [ ] Design database schema and set up SQLAlchemy models + Alembic migrations (User, Monitor, CheckResult, Incident, StatusPage)
 - [ ] Implement user registration and JWT authentication (signup, login, logout)
 - [ ] Build monitor CRUD API (create, read, update, delete monitors with validation)
@@ -49,12 +50,60 @@ Phase: SCAFFOLDING
 - Revenue: freemium ($0 / $14/mo / $39/mo tiers)
 - Created spec, architecture decisions, and task backlog
 
+### Session 2 — SCAFFOLDING
+- Created project structure: pyproject.toml, src/app layout, .gitignore, .env.example
+- Set up FastAPI app with async lifespan, CORS middleware, static files, Jinja2 templates
+- Created SQLAlchemy async models: User, Monitor, CheckResult, Incident, StatusPage
+- Set up Alembic migration framework configured for async SQLite
+- Built professional landing page with hero, features, and pricing sections (Tailwind CSS)
+- Created login and signup page templates with client-side form handling
+- Added health check endpoint at /api/health
+- Configured pydantic-settings for environment-based config
+- Wrote and passed 4 tests (health check, landing, login, signup pages)
+- Created GitHub repo: https://github.com/arcangelileo/status-ping
+
 ## Known Issues
 (none yet)
 
 ## Files Structure
 ```
 status-ping/
-├── CLAUDE.md                  # Project spec and progress
-└── (to be created)
+├── CLAUDE.md                           # Project spec and progress
+├── pyproject.toml                      # Python project config & dependencies
+├── .gitignore                          # Python/IDE/DB gitignore
+├── .env.example                        # Environment variable template
+├── alembic.ini                         # Alembic configuration
+├── alembic/
+│   ├── env.py                          # Async Alembic environment
+│   ├── script.py.mako                  # Migration template
+│   └── versions/                       # Migration files
+├── src/
+│   └── app/
+│       ├── __init__.py
+│       ├── main.py                     # FastAPI app entry point
+│       ├── config.py                   # Settings via pydantic-settings
+│       ├── database.py                 # Async SQLAlchemy engine & session
+│       ├── models/
+│       │   ├── __init__.py             # Model exports
+│       │   ├── user.py                 # User model
+│       │   ├── monitor.py             # Monitor model
+│       │   ├── check_result.py        # CheckResult model
+│       │   ├── incident.py            # Incident model
+│       │   └── status_page.py         # StatusPage model
+│       ├── routers/
+│       │   ├── __init__.py
+│       │   ├── auth.py                # Auth routes (stub)
+│       │   ├── monitors.py           # Monitor CRUD routes (stub)
+│       │   ├── pages.py              # Page routes (landing, login, signup)
+│       │   └── status.py             # Public status page routes (stub)
+│       ├── static/                    # Static assets
+│       └── templates/
+│           ├── base.html              # Base template with nav & footer
+│           ├── landing.html           # Landing page with features & pricing
+│           ├── login.html             # Login form
+│           └── signup.html            # Signup form
+└── tests/
+    ├── __init__.py
+    ├── conftest.py                    # Test configuration
+    └── test_health.py                 # Health check & page tests
 ```

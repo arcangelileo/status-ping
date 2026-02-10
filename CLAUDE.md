@@ -30,16 +30,16 @@ Phase: DEVELOPMENT
 ## Task Backlog
 - [x] Create project structure (pyproject.toml, src layout, .gitignore, alembic init)
 - [x] Set up FastAPI app skeleton with health check, CORS, static files, Jinja2 templates
-- [ ] Design database schema and set up SQLAlchemy models + Alembic migrations (User, Monitor, CheckResult, Incident, StatusPage)
-- [ ] Implement user registration and JWT authentication (signup, login, logout)
-- [ ] Build monitor CRUD API (create, read, update, delete monitors with validation)
+- [x] Design database schema and set up SQLAlchemy models + Alembic migrations (User, Monitor, CheckResult, Incident, StatusPage)
+- [x] Implement user registration and JWT authentication (signup, login, logout)
+- [x] Build monitor CRUD API (create, read, update, delete monitors with validation)
 - [ ] Implement uptime check engine (async HTTP checks via httpx, APScheduler job per monitor)
 - [ ] Build check result storage and retention (store results, prune old data based on plan)
 - [ ] Implement incident detection and alert system (consecutive failure detection, email alerts on state change)
-- [ ] Create dashboard UI (monitor list with status indicators, response time charts, uptime percentages)
+- [x] Create dashboard UI (monitor list with status indicators, response time charts, uptime percentages)
 - [ ] Build public status page (per-account page showing all public monitors, uptime bars, current status)
 - [ ] Add monitor detail view (response time history chart, recent check log, incident history)
-- [ ] Implement billing/subscription tier logic (enforce monitor limits, check intervals, feature gates)
+- [x] Implement billing/subscription tier logic (enforce monitor limits, check intervals, feature gates)
 - [ ] Write Dockerfile and docker-compose.yml
 - [ ] Write README with setup and deployment instructions
 
@@ -61,6 +61,18 @@ Phase: DEVELOPMENT
 - Configured pydantic-settings for environment-based config
 - Wrote and passed 4 tests (health check, landing, login, signup pages)
 - Created GitHub repo: https://github.com/arcangelileo/status-ping
+
+### Session 3 — AUTH, MONITORS & DASHBOARD
+- Generated initial Alembic migration for all models (users, monitors, check_results, incidents, status_pages)
+- Built JWT auth system with httponly cookie tokens, bcrypt password hashing
+- Implemented auth routes: POST /auth/signup, POST /auth/login (form-based), POST /auth/logout, GET /auth/me
+- Full input validation with Pydantic schemas (email, password strength, slug format, URL format)
+- Created plan tier system (free/pro/business) with monitor limits and check interval enforcement
+- Built full monitor CRUD API: GET/POST /api/monitors, GET/PATCH/DELETE /api/monitors/{id}
+- Created professional dashboard UI with monitor list, status indicators, stats bar, add/edit/delete modals
+- Dashboard features: auto-refresh every 30s, user menu with profile/logout, responsive design
+- Auth guards: dashboard redirects to login for unauthenticated users, API returns 401
+- Wrote and passed 33 tests covering auth (13 tests) + monitors (16 tests) + pages (4 tests)
 
 ## Known Issues
 (none yet)
@@ -90,20 +102,26 @@ status-ping/
 │       │   ├── check_result.py        # CheckResult model
 │       │   ├── incident.py            # Incident model
 │       │   └── status_page.py         # StatusPage model
+│       ├── auth.py                    # JWT auth utilities (hash, token, deps)
+│       ├── schemas.py                 # Pydantic request/response schemas
+│       ├── plans.py                   # Plan tier limits and features
 │       ├── routers/
 │       │   ├── __init__.py
-│       │   ├── auth.py                # Auth routes (stub)
-│       │   ├── monitors.py           # Monitor CRUD routes (stub)
-│       │   ├── pages.py              # Page routes (landing, login, signup)
+│       │   ├── auth.py                # Auth routes (signup, login, logout, me)
+│       │   ├── monitors.py           # Monitor CRUD API routes
+│       │   ├── pages.py              # Page routes (landing, login, signup, dashboard)
 │       │   └── status.py             # Public status page routes (stub)
 │       ├── static/                    # Static assets
 │       └── templates/
 │           ├── base.html              # Base template with nav & footer
 │           ├── landing.html           # Landing page with features & pricing
 │           ├── login.html             # Login form
-│           └── signup.html            # Signup form
+│           ├── signup.html            # Signup form
+│           └── dashboard.html         # Dashboard with monitor list & management
 └── tests/
     ├── __init__.py
-    ├── conftest.py                    # Test configuration
-    └── test_health.py                 # Health check & page tests
+    ├── conftest.py                    # Test configuration with test DB & fixtures
+    ├── test_health.py                 # Health check & page tests
+    ├── test_auth.py                   # Auth API tests (13 tests)
+    └── test_monitors.py              # Monitor CRUD API tests (16 tests)
 ```

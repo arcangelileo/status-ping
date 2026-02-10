@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block nav_right %}
+<div class="flex items-center gap-4">
+    <a href="/dashboard" class="text-sm font-medium text-brand-600">Dashboard</a>
+    <div class="relative" x-data="{ open: false }">
+        <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+            <div class="w-8 h-8 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center font-semibold text-xs">
+                {{ user.name[0] | upper }}
+            </div>
+            <span class="hidden sm:inline">{{ user.name }}</span>
+        </button>
+        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50">
+            <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900 truncate">{{ user.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+                <span class="inline-block mt-1 text-xs font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full capitalize">{{ user.plan }} plan</span>
+            </div>
+            <a href="/s/{{ user.account_slug }}" target="_blank" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    Public status page
+                </span>
+            </a>
+            <button onclick="logoutUser()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Log out
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Monitors</h1>
+            <p class="mt-1 text-sm text-gray-500">Track your website and API uptime in real-time</p>
+        </div>
+        <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition hover:-translate-y-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Monitor
+        </button>
+    </div>
+
+    <!-- Stats Bar -->
+    <div id="statsBar" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-sm text-gray-500">Total Monitors</p>
+            <p id="statTotal" class="text-2xl font-bold text-gray-900 mt-1">-</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-sm text-gray-500">Online</p>
+            <p id="statUp" class="text-2xl font-bold text-green-600 mt-1">-</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-sm text-gray-500">Down</p>
+            <p id="statDown" class="text-2xl font-bold text-red-600 mt-1">-</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-sm text-gray-500">Not Checked</p>
+            <p id="statUnknown" class="text-2xl font-bold text-gray-400 mt-1">-</p>
+        </div>
+    </div>
+
+    <!-- Monitor List -->
+    <div id="monitorList" class="space-y-3">
+        <!-- Loading state -->
+        <div id="loadingState" class="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <svg class="animate-spin h-8 w-8 mx-auto text-brand-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <p class="text-sm text-gray-500">Loading monitors...</p>
+        </div>
+    </div>
+
+    <!-- Empty State (hidden by default) -->
+    <div id="emptyState" class="hidden bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="w-16 h-16 mx-auto bg-brand-50 rounded-2xl flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-1">No monitors yet</h3>
+        <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Add your first monitor to start tracking the uptime and response time of your websites and APIs.</p>
+        <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add your first monitor
+        </button>
+    </div>
+</div>
+
+<!-- Add/Edit Monitor Modal -->
+<div id="monitorModal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 id="modalTitle" class="text-lg font-semibold text-gray-900">Add Monitor</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="monitorForm" class="p-6 space-y-5">
+                <input type="hidden" id="editMonitorId" value="">
+                <div>
+                    <label for="monitorName" class="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+                    <input type="text" id="monitorName" required placeholder="My Website"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+                <div>
+                    <label for="monitorUrl" class="block text-sm font-medium text-gray-700 mb-1.5">URL</label>
+                    <input type="url" id="monitorUrl" required placeholder="https://example.com"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="monitorMethod" class="block text-sm font-medium text-gray-700 mb-1.5">HTTP Method</label>
+                        <select id="monitorMethod"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                            <option value="GET">GET</option>
+                            <option value="HEAD">HEAD</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="monitorExpectedStatus" class="block text-sm font-medium text-gray-700 mb-1.5">Expected Status</label>
+                        <input type="number" id="monitorExpectedStatus" value="200" min="100" max="599"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="monitorInterval" class="block text-sm font-medium text-gray-700 mb-1.5">Check Interval</label>
+                        <select id="monitorInterval"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm bg-white">
+                            <option value="30">30 seconds</option>
+                            <option value="60">1 minute</option>
+                            <option value="180">3 minutes</option>
+                            <option value="300" selected>5 minutes</option>
+                            <option value="600">10 minutes</option>
+                            <option value="900">15 minutes</option>
+                            <option value="1800">30 minutes</option>
+                            <option value="3600">1 hour</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="monitorTimeout" class="block text-sm font-medium text-gray-700 mb-1.5">Timeout (seconds)</label>
+                        <input type="number" id="monitorTimeout" value="30" min="1" max="120"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="monitorPublic" checked
+                        class="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500">
+                    <label for="monitorPublic" class="text-sm text-gray-700">Show on public status page</label>
+                </div>
+                <div id="modalError" class="hidden text-sm text-red-600 bg-red-50 px-4 py-2.5 rounded-xl"></div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition">Cancel</button>
+                    <button type="submit" id="modalSubmitBtn" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition">Add Monitor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div class="text-center">
+                <div class="w-12 h-12 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-1">Delete Monitor</h3>
+                <p class="text-sm text-gray-500 mb-6">Are you sure? This will also delete all check history. This action cannot be undone.</p>
+                <div class="flex gap-3">
+                    <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition">Cancel</button>
+                    <button onclick="confirmDelete()" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let monitors = [];
+let deleteTargetId = null;
+
+// Load monitors on page load
+document.addEventListener('DOMContentLoaded', loadMonitors);
+
+async function loadMonitors() {
+    try {
+        const res = await fetch('/api/monitors');
+        if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+        monitors = await res.json();
+        renderMonitors();
+    } catch (err) {
+        document.getElementById('loadingState').innerHTML = `
+            <div class="text-red-500">
+                <p class="font-medium">Failed to load monitors</p>
+                <p class="text-sm mt-1">Please try refreshing the page.</p>
+            </div>`;
+    }
+}
+
+function renderMonitors() {
+    const list = document.getElementById('monitorList');
+    const empty = document.getElementById('emptyState');
+    const loading = document.getElementById('loadingState');
+
+    loading.classList.add('hidden');
+
+    // Update stats
+    document.getElementById('statTotal').textContent = monitors.length;
+    document.getElementById('statUp').textContent = monitors.filter(m => m.current_status === 'up').length;
+    document.getElementById('statDown').textContent = monitors.filter(m => m.current_status === 'down').length;
+    document.getElementById('statUnknown').textContent = monitors.filter(m => m.current_status === 'unknown').length;
+
+    if (monitors.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+
+    empty.classList.add('hidden');
+    list.innerHTML = monitors.map(m => monitorCard(m)).join('');
+}
+
+function monitorCard(m) {
+    const statusColors = {
+        up: { bg: 'bg-green-100', text: 'text-green-700', dot: 'bg-green-500', label: 'Online' },
+        down: { bg: 'bg-red-100', text: 'text-red-700', dot: 'bg-red-500', label: 'Down' },
+        unknown: { bg: 'bg-gray-100', text: 'text-gray-500', dot: 'bg-gray-400', label: 'Pending' },
+    };
+    const s = statusColors[m.current_status] || statusColors.unknown;
+    const interval = formatInterval(m.check_interval);
+    const lastChecked = m.last_checked_at ? timeAgo(m.last_checked_at) : 'Never';
+    const responseTime = m.response_time_ms ? `${m.response_time_ms}ms` : '-';
+
+    return `
+    <div class="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition group">
+        <div class="flex items-center justify-between p-5">
+            <div class="flex items-center gap-4 min-w-0 flex-1">
+                <div class="relative flex-shrink-0">
+                    <div class="w-10 h-10 ${s.bg} rounded-lg flex items-center justify-center">
+                        ${m.current_status === 'up' ?
+                            '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' :
+                        m.current_status === 'down' ?
+                            '<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>' :
+                            '<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                        }
+                    </div>
+                    ${m.current_status === 'up' ? '<span class="absolute -top-0.5 -right-0.5 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span>' : ''}
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-semibold text-gray-900 truncate">${escapeHtml(m.name)}</h3>
+                        <span class="inline-flex items-center gap-1 text-xs font-medium ${s.text} ${s.bg} px-2 py-0.5 rounded-full">
+                            <span class="w-1.5 h-1.5 rounded-full ${s.dot}"></span>
+                            ${s.label}
+                        </span>
+                        ${!m.is_active ? '<span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Paused</span>' : ''}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5 truncate">${escapeHtml(m.url)}</p>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center gap-6 text-xs text-gray-500 ml-4">
+                <div class="text-center">
+                    <p class="font-medium text-gray-400 uppercase tracking-wider mb-0.5">Interval</p>
+                    <p class="text-gray-700">${interval}</p>
+                </div>
+                <div class="text-center">
+                    <p class="font-medium text-gray-400 uppercase tracking-wider mb-0.5">Last Check</p>
+                    <p class="text-gray-700">${lastChecked}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 ml-4">
+                <button onclick="openEditModal('${m.id}')" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition opacity-0 group-hover:opacity-100" title="Edit">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <button onclick="toggleActive('${m.id}', ${!m.is_active})" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition opacity-0 group-hover:opacity-100" title="${m.is_active ? 'Pause' : 'Resume'}">
+                    ${m.is_active ?
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' :
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                    }
+                </button>
+                <button onclick="openDeleteModal('${m.id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100" title="Delete">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+// Modal management
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Monitor';
+    document.getElementById('modalSubmitBtn').textContent = 'Add Monitor';
+    document.getElementById('editMonitorId').value = '';
+    document.getElementById('monitorForm').reset();
+    document.getElementById('monitorInterval').value = '300';
+    document.getElementById('monitorExpectedStatus').value = '200';
+    document.getElementById('monitorTimeout').value = '30';
+    document.getElementById('monitorPublic').checked = true;
+    document.getElementById('modalError').classList.add('hidden');
+    document.getElementById('monitorModal').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+    const m = monitors.find(mon => mon.id === id);
+    if (!m) return;
+
+    document.getElementById('modalTitle').textContent = 'Edit Monitor';
+    document.getElementById('modalSubmitBtn').textContent = 'Save Changes';
+    document.getElementById('editMonitorId').value = m.id;
+    document.getElementById('monitorName').value = m.name;
+    document.getElementById('monitorUrl').value = m.url;
+    document.getElementById('monitorMethod').value = m.method;
+    document.getElementById('monitorInterval').value = m.check_interval.toString();
+    document.getElementById('monitorExpectedStatus').value = m.expected_status_code;
+    document.getElementById('monitorTimeout').value = m.timeout;
+    document.getElementById('monitorPublic').checked = m.is_public;
+    document.getElementById('modalError').classList.add('hidden');
+    document.getElementById('monitorModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('monitorModal').classList.add('hidden');
+}
+
+function openDeleteModal(id) {
+    deleteTargetId = id;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    deleteTargetId = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+// Form submission
+document.getElementById('monitorForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('modalError');
+    errorEl.classList.add('hidden');
+
+    const editId = document.getElementById('editMonitorId').value;
+    const body = {
+        name: document.getElementById('monitorName').value,
+        url: document.getElementById('monitorUrl').value,
+        method: document.getElementById('monitorMethod').value,
+        check_interval: parseInt(document.getElementById('monitorInterval').value),
+        expected_status_code: parseInt(document.getElementById('monitorExpectedStatus').value),
+        timeout: parseInt(document.getElementById('monitorTimeout').value),
+        is_public: document.getElementById('monitorPublic').checked,
+    };
+
+    try {
+        const url = editId ? `/api/monitors/${editId}` : '/api/monitors';
+        const method = editId ? 'PATCH' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+            closeModal();
+            await loadMonitors();
+        } else {
+            const data = await res.json();
+            let msg = data.detail || 'Something went wrong';
+            if (Array.isArray(data.detail)) {
+                msg = data.detail.map(d => d.msg || d).join('; ');
+            }
+            errorEl.textContent = msg;
+            errorEl.classList.remove('hidden');
+        }
+    } catch (err) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.classList.remove('hidden');
+    }
+});
+
+async function confirmDelete() {
+    if (!deleteTargetId) return;
+    try {
+        await fetch(`/api/monitors/${deleteTargetId}`, { method: 'DELETE' });
+        closeDeleteModal();
+        await loadMonitors();
+    } catch (err) {
+        closeDeleteModal();
+    }
+}
+
+async function toggleActive(id, isActive) {
+    try {
+        await fetch(`/api/monitors/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: isActive }),
+        });
+        await loadMonitors();
+    } catch (err) {
+        // Silently fail
+    }
+}
+
+// User menu
+function toggleUserMenu() {
+    const menu = document.getElementById('userMenu');
+    menu.classList.toggle('hidden');
+}
+
+// Close menu on outside click
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('userMenu');
+    if (!menu) return;
+    if (!e.target.closest('#userMenu') && !e.target.closest('[onclick="toggleUserMenu()"]')) {
+        menu.classList.add('hidden');
+    }
+});
+
+async function logoutUser() {
+    await fetch('/auth/logout', { method: 'POST' });
+    window.location.href = '/';
+}
+
+// Utility functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatInterval(seconds) {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    return `${Math.floor(seconds / 3600)}h`;
+}
+
+function timeAgo(dateStr) {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = Math.floor((now - date) / 1000);
+
+    if (diff < 10) return 'just now';
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
+
+// Auto-refresh every 30 seconds
+setInterval(loadMonitors, 30000);
+</script>
+{% endblock %}

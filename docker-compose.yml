@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: statusping
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - statusping-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/statusping.db
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - BASE_URL=${BASE_URL:-http://localhost:8000}
+      - DEBUG=${DEBUG:-false}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-alerts@statusping.app}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - DEFAULT_CHECK_INTERVAL=${DEFAULT_CHECK_INTERVAL:-300}
+      - DEFAULT_TIMEOUT=${DEFAULT_TIMEOUT:-30}
+      - CONSECUTIVE_FAILURES_THRESHOLD=${CONSECUTIVE_FAILURES_THRESHOLD:-3}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  statusping-data:
+    driver: local

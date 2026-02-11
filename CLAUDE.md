@@ -1,6 +1,6 @@
 # StatusPing
 
-Phase: DEVELOPMENT
+Phase: QA
 
 ## Project Spec
 - **Repo**: https://github.com/arcangelileo/status-ping
@@ -40,8 +40,8 @@ Phase: DEVELOPMENT
 - [x] Build public status page (per-account page showing all public monitors, uptime bars, current status)
 - [x] Add monitor detail view (response time history chart, recent check log, incident history)
 - [x] Implement billing/subscription tier logic (enforce monitor limits, check intervals, feature gates)
-- [ ] Write Dockerfile and docker-compose.yml
-- [ ] Write README with setup and deployment instructions
+- [x] Write Dockerfile and docker-compose.yml
+- [x] Write README with setup and deployment instructions
 
 ## Progress Log
 ### Session 1 — IDEATION
@@ -90,6 +90,24 @@ Phase: DEVELOPMENT
 - Added `get_session_factory()` indirection for testable background tasks
 - Wrote and passed 54 tests: auth (13) + checker (7) + health (4) + monitors (16) + status page (14)
 
+### Session 5 — DOCKERFILE, DOCKER COMPOSE & README
+- Created production-ready multi-stage Dockerfile (Python 3.11-slim, virtualenv-based, non-root user)
+- Added docker-entrypoint.sh that runs Alembic migrations before starting the app
+- Configured Docker health check against /api/health endpoint
+- Finalized docker-compose.yml with named volume for SQLite data persistence, all env vars with defaults
+- Wrote .dockerignore to exclude tests, dev files, and database from build context
+- Created comprehensive README.md with:
+  - Feature overview, tech stack, and quick start (Docker + local dev)
+  - Full configuration reference table (all environment variables)
+  - Usage guide: account creation, adding monitors, status pages, monitor details
+  - Complete API endpoint reference (auth, monitors, status, health)
+  - Pricing tier comparison table
+  - Project structure overview
+  - Production deployment guide with nginx reverse proxy example
+  - Test execution instructions
+- All 54 tests pass: auth (13) + checker (7) + health (4) + monitors (16) + status page (14)
+- All backlog items complete — phase changed to QA
+
 ## Known Issues
 (none yet)
 
@@ -97,7 +115,12 @@ Phase: DEVELOPMENT
 ```
 status-ping/
 ├── CLAUDE.md                           # Project spec and progress
+├── README.md                           # Setup and deployment instructions
 ├── pyproject.toml                      # Python project config & dependencies
+├── Dockerfile                          # Multi-stage Docker build
+├── docker-compose.yml                  # Docker Compose configuration
+├── docker-entrypoint.sh                # Container entrypoint (runs migrations)
+├── .dockerignore                       # Docker build context exclusions
 ├── .gitignore                          # Python/IDE/DB gitignore
 ├── .env.example                        # Environment variable template
 ├── alembic.ini                         # Alembic configuration

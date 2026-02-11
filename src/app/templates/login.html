@@ -24,8 +24,8 @@
                         placeholder="Enter your password">
                 </div>
                 <div id="errorMsg" class="hidden text-sm text-red-600 bg-red-50 px-4 py-2.5 rounded-xl"></div>
-                <button type="submit"
-                    class="w-full py-2.5 px-4 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition">
+                <button type="submit" id="submitBtn"
+                    class="w-full py-2.5 px-4 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
                     Log in
                 </button>
             </form>
@@ -48,6 +48,10 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     formData.append('username', document.getElementById('email').value);
     formData.append('password', document.getElementById('password').value);
 
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Logging in...';
+
     try {
         const res = await fetch('/auth/login', {
             method: 'POST',
@@ -58,12 +62,22 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             window.location.href = '/dashboard';
         } else {
             const data = await res.json();
-            errorMsg.textContent = data.detail || 'Invalid credentials';
+            let msg = 'Invalid credentials';
+            if (Array.isArray(data.detail)) {
+                msg = data.detail.map(d => d.msg || d).join('; ');
+            } else if (typeof data.detail === 'string') {
+                msg = data.detail;
+            }
+            errorMsg.textContent = msg;
             errorMsg.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Log in';
         }
     } catch (err) {
         errorMsg.textContent = 'Network error. Please try again.';
         errorMsg.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Log in';
     }
 });
 </script>

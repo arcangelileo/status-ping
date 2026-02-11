@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -70,37 +70,39 @@ async def public_status_page(
         up_count = up_result.scalar() or 0
         uptime_24h = round((up_count / total * 100) if total > 0 else 100, 2)
 
-        # Get uptime bars data (last 90 days, grouped by day)
+        # Get uptime bars data (last 90 days, grouped by day) — single query
+        cutoff_90d = (now - timedelta(days=90)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        date_expr = func.date(CheckResult.checked_at)
+        bar_result = await db.execute(
+            select(
+                date_expr.label("day"),
+                func.count(CheckResult.id).label("total"),
+                func.sum(
+                    case((CheckResult.status == "up", 1), else_=0)
+                ).label("up_count"),
+            )
+            .where(
+                CheckResult.monitor_id == monitor.id,
+                CheckResult.checked_at >= cutoff_90d,
+            )
+            .group_by(date_expr)
+        )
+        day_stats = {row.day: (row.total, row.up_count) for row in bar_result}
+
         uptime_bars = []
         for i in range(89, -1, -1):
             day_start = (now - timedelta(days=i)).replace(
                 hour=0, minute=0, second=0, microsecond=0
             )
-            day_end = day_start + timedelta(days=1)
-
-            day_total_result = await db.execute(
-                select(func.count(CheckResult.id)).where(
-                    CheckResult.monitor_id == monitor.id,
-                    CheckResult.checked_at >= day_start,
-                    CheckResult.checked_at < day_end,
-                )
-            )
-            day_total = day_total_result.scalar() or 0
-
-            if day_total == 0:
-                uptime_bars.append({"date": day_start.strftime("%b %d"), "pct": None})
-            else:
-                day_up_result = await db.execute(
-                    select(func.count(CheckResult.id)).where(
-                        CheckResult.monitor_id == monitor.id,
-                        CheckResult.checked_at >= day_start,
-                        CheckResult.checked_at < day_end,
-                        CheckResult.status == "up",
-                    )
-                )
-                day_up = day_up_result.scalar() or 0
-                pct = round((day_up / day_total * 100), 1)
+            day_key = day_start.strftime("%Y-%m-%d")
+            if day_key in day_stats:
+                total, up_count = day_stats[day_key]
+                pct = round((up_count / total * 100), 1) if total > 0 else None
                 uptime_bars.append({"date": day_start.strftime("%b %d"), "pct": pct})
+            else:
+                uptime_bars.append({"date": day_start.strftime("%b %d"), "pct": None})
 
         # Get latest response time
         latest_result = await db.execute(

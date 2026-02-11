@@ -1,6 +1,6 @@
 # StatusPing
 
-Phase: QA
+Phase: DEPLOYMENT
 
 ## Project Spec
 - **Repo**: https://github.com/arcangelileo/status-ping
@@ -108,8 +108,37 @@ Phase: QA
 - All 54 tests pass: auth (13) + checker (7) + health (4) + monitors (16) + status page (14)
 - All backlog items complete — phase changed to QA
 
+### Session 6 — QA & POLISH
+- **Ran full test suite**: all 54 existing tests passed on first run
+- **Audited every source file**: all models, routers, schemas, checker, scheduler, templates, tests
+- **Bugs found and fixed**:
+  1. **Signup form error handling**: Pydantic validation errors (422) returned as array of objects, but JS only handled string `detail` — fixed to parse both array and string formats
+  2. **Login form error handling**: Same issue as signup — fixed with proper array/string detection
+  3. **Status page animate-ping positioning**: Monitor status dots used `absolute` without `relative` parent container, causing ping animation to render incorrectly — added `relative` to parent span
+  4. **Dashboard unused code**: `responseTime` variable computed from non-existent `m.response_time_ms` field (not in MonitorResponse schema) — removed dead code
+  5. **Monitor detail page title**: Static "Monitor Detail" title — now dynamically updates to show monitor name via `document.title`
+  6. **Missing favicon**: No favicon caused 404 in browsers — added inline SVG favicon matching the StatusPing brand bolt icon
+  7. **Mobile action buttons invisible**: Dashboard monitor card edit/pause/delete buttons used `opacity-0 group-hover:opacity-100` which made them invisible on touch devices — changed to `sm:opacity-0 sm:group-hover:opacity-100` so they're always visible on mobile
+- **Performance optimization**:
+  - Status page uptime bars query reduced from 180+ queries per monitor (2 per day * 90 days) to a single GROUP BY query using `func.date()` and `case()` — massive improvement for pages with multiple monitors
+- **UI polish**:
+  - Added loading states with disabled buttons on login and signup forms ("Logging in...", "Creating account...")
+  - Added `disabled:opacity-50 disabled:cursor-not-allowed` styles to submit buttons
+  - Added meta description tag to base template for SEO
+  - Added favicon to status_page.html (doesn't extend base.html)
+- **New test coverage added (9 new tests, 63 total)**:
+  - Auth: logged-in user redirect from /login, /signup, / (3 tests)
+  - Auth: signup creates default status page (1 test)
+  - Monitors: plan enforcement on interval update (1 test)
+  - Checker: connection error handling (1 test)
+  - Status page: JSON API 404 for non-existent slug (1 test)
+  - Status page: renders properly with zero monitors (1 test)
+  - Status page: uptime stats returns zeros when no check results exist (1 test)
+- **All 63 tests pass**: auth (17) + checker (8) + health (4) + monitors (17) + status page (17)
+- **Phase changed to DEPLOYMENT** — all QA items pass, app is production-ready
+
 ## Known Issues
-(none yet)
+(none)
 
 ## Files Structure
 ```
@@ -165,8 +194,8 @@ status-ping/
     ├── __init__.py
     ├── conftest.py                    # Test configuration with test DB & fixtures
     ├── test_health.py                 # Health check & page tests (4 tests)
-    ├── test_auth.py                   # Auth API tests (13 tests)
-    ├── test_monitors.py              # Monitor CRUD API tests (16 tests)
-    ├── test_checker.py               # Check engine & incident tests (7 tests)
-    └── test_status_page.py           # Status page & detail tests (14 tests)
+    ├── test_auth.py                   # Auth API tests (17 tests)
+    ├── test_monitors.py              # Monitor CRUD API tests (17 tests)
+    ├── test_checker.py               # Check engine & incident tests (8 tests)
+    └── test_status_page.py           # Status page & detail tests (17 tests)
 ```

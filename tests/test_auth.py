@@ -165,3 +165,44 @@ async def test_dashboard_redirect_unauthenticated(client: AsyncClient):
     response = await client.get("/dashboard", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_logged_in_user_redirected_from_login(authenticated_client: AsyncClient):
+    """Logged-in users visiting /login should be redirected to /dashboard."""
+    response = await authenticated_client.get("/login", follow_redirects=False)
+    assert response.status_code == 303
+    assert "/dashboard" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_logged_in_user_redirected_from_signup(authenticated_client: AsyncClient):
+    """Logged-in users visiting /signup should be redirected to /dashboard."""
+    response = await authenticated_client.get("/signup", follow_redirects=False)
+    assert response.status_code == 303
+    assert "/dashboard" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_logged_in_user_redirected_from_landing(authenticated_client: AsyncClient):
+    """Logged-in users visiting / should be redirected to /dashboard."""
+    response = await authenticated_client.get("/", follow_redirects=False)
+    assert response.status_code == 303
+    assert "/dashboard" in response.headers.get("location", "")
+
+
+@pytest.mark.asyncio
+async def test_signup_creates_status_page(client: AsyncClient):
+    """Signup should create a default status page for the user."""
+    response = await client.post("/auth/signup", json={
+        "name": "New User",
+        "email": "newuser@example.com",
+        "password": "password123",
+        "account_slug": "new-user",
+    })
+    assert response.status_code == 201
+
+    # Status page should exist
+    client.cookies.update(response.cookies)
+    status_response = await client.get("/s/new-user")
+    assert status_response.status_code == 200

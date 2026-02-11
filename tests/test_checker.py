@@ -298,3 +298,31 @@ async def test_prune_old_results(authenticated_client: AsyncClient):
         )
         checks = result.scalars().all()
         assert len(checks) == 1  # Only the recent one should remain
+
+
+@pytest.mark.asyncio
+async def test_perform_check_connection_error(authenticated_client: AsyncClient):
+    """Test that a connection error is recorded as a failure."""
+    monitor_id = await create_monitor_and_get_id(authenticated_client)
+
+    import httpx as httpx_module
+
+    with patch("app.checker.httpx.AsyncClient") as MockClient:
+        mock_client_instance = AsyncMock()
+        mock_client_instance.request = AsyncMock(
+            side_effect=httpx_module.ConnectError("Connection refused")
+        )
+        mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
+        mock_client_instance.__aexit__ = AsyncMock(return_value=False)
+        MockClient.return_value = mock_client_instance
+
+        from app.checker import perform_check
+        await perform_check(monitor_id)
+
+    async with test_session_factory() as db:
+        result = await db.execute(
+            select(CheckResult).where(CheckResult.monitor_id == monitor_id)
+        )
+        check = result.scalar_one()
+        assert check.status == "down"
+        assert "connection" in check.error_message.lower()

@@ -184,6 +184,20 @@ async def test_create_monitor_invalid_method(authenticated_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_update_monitor_interval_limit(authenticated_client: AsyncClient):
+    """Test that plan limits are enforced when updating check interval."""
+    create_res = await authenticated_client.post("/api/monitors", json=MONITOR_DATA)
+    monitor_id = create_res.json()["id"]
+
+    # Free plan min interval is 300s — trying 60s should be rejected
+    response = await authenticated_client.patch(f"/api/monitors/{monitor_id}", json={
+        "check_interval": 60,
+    })
+    assert response.status_code == 403
+    assert "interval" in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
 async def test_monitors_isolated_between_users(client: AsyncClient):
     # Create user 1 and add a monitor
     res1 = await client.post("/auth/signup", json={

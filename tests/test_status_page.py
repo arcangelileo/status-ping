@@ -246,3 +246,32 @@ async def test_status_page_no_incidents_message(authenticated_client: AsyncClien
     response = await authenticated_client.get("/s/test-company")
     assert response.status_code == 200
     assert "No incidents" in response.text
+
+
+@pytest.mark.asyncio
+async def test_public_status_api_not_found(client: AsyncClient):
+    """Test 404 for JSON API with non-existent slug."""
+    response = await client.get("/s/nonexistent-slug/api")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_status_page_no_monitors(authenticated_client: AsyncClient):
+    """Test status page renders properly with zero monitors."""
+    response = await authenticated_client.get("/s/test-company")
+    assert response.status_code == 200
+    assert "No monitors" in response.text
+
+
+@pytest.mark.asyncio
+async def test_uptime_stats_with_no_results(authenticated_client: AsyncClient):
+    """Test uptime stats returns zero/null when no check results exist."""
+    res = await authenticated_client.post("/api/monitors", json=MONITOR_DATA)
+    monitor_id = res.json()["id"]
+
+    response = await authenticated_client.get(f"/api/monitors/{monitor_id}/uptime")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["uptime"]["24h"] == 0
+    assert data["avg_response_time_ms"] is None
+    assert data["total_incidents"] == 0
